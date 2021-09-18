@@ -1,0 +1,5 @@
+apt update
+apt upgrade
+apt install git
+apt install golang
+go mod init basic-sample && go mod tidy
