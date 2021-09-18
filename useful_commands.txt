@@ -3,3 +3,11 @@ apt upgrade
 apt install git
 apt install golang
 go mod init basic-sample && go mod tidy
+
+git checkout -b (branch name)
+
+to connect to database:
+cockroach sql --url 'postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert='$HOME'/.postgresql/root.crt&options=--cluster%3Dlumeny-3513'
+
+passphrase:
+postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dlumeny-3513
