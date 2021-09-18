@@ -33,25 +33,25 @@ func insertRows(ctx context.Context, tx pgx.Tx, acct uuid.UUID, data string) err
 	json.Unmarshal([]byte(data), &stu)
 
 	if _, err := tx.Exec(ctx,
-		"INSERT INTO students (Lumenyid, LastName, FirstName, StudentNum, Buildings, CIDate, Approved, COM) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", acct, stu.LastName, stu.FirstName, stu.StudentNum, stu.Buildings, stu.CIDate, stu.Approved, stu.COM); err != nil {
+		"INSERT INTO students (LumenyID, LastName, FirstName, StudentNum, Buildings, CIDate, Approved, COM) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", acct, stu.LastName, stu.FirstName, stu.StudentNum, stu.Buildings, stu.CIDate, stu.Approved, stu.COM); err != nil {
 		return err
 	}
 	return nil
 }
 
 func getAllData(conn *pgx.Conn) error {
-	rows, err := conn.Query(context.Background(), "SELECT id, balance FROM accounts")
+	rows, err := conn.Query(context.Background(), "SELECT LumenyID FROM students")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var id uuid.UUID
-		var balance int
-		if err := rows.Scan(&id, &balance); err != nil {
+		//var balance int
+		if err := rows.Scan(&id); err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("%s: %d\n", id, balance)
+		log.Printf("%s\n", id)
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func replaceData(ctx context.Context, tx pgx.Tx, studentID uuid.UUID, data stude
 	// Perform the transfer.
 	log.Printf("Updating Data from student with ID %s ...", studentID)
 	if _, err := tx.Exec(ctx,
-		"UPDATE students SET Approved = $1 WHERE Lumenyid = $2", true, studentID); err != nil {
+		"UPDATE students SET Approved = $1 WHERE LumenyID = $2", true, studentID); err != nil {
 		return err
 	}
 	return nil
@@ -77,7 +77,7 @@ func deleteRow(ctx context.Context, tx pgx.Tx, Lumenyid uuid.UUID) error {
 	// Delete two rows into the "accounts" table.
 	log.Printf("Deleting row with ID %s", Lumenyid)
 	if _, err := tx.Exec(ctx,
-		"DELETE FROM student WHERE Lumenyid IN ($1)", Lumenyid); err != nil {
+		"DELETE FROM student WHERE LumenyID IN ($1)", Lumenyid); err != nil {
 		return err
 	}
 	return nil
@@ -95,7 +95,7 @@ func main() {
 
 	// Connect to the "bank" database
 	config, err := pgx.ParseConfig(connstring)
-	config.Database = "school"
+	config.Database = "uni"
 	if err != nil {
 		log.Fatal("error configuring the database: ", err)
 	}
