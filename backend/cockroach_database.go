@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
+	//"bufio"
 	"context"
 	"log"
 	"os"
-	"crypto/rand"
+	"encoding/json"
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
@@ -13,11 +13,27 @@ import (
 
 var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 
-func insertRows(ctx context.Context, tx pgx.Tx, accts [4]uuid.UUID) error {
+type studentData struct {
+	Lumenyid uuid.UUID
+    LastName string
+    FirstName string
+    StudentNum int
+    Buildings string
+    CIDate string
+    Approved bool
+    COM bool
+}
+
+func insertRows(ctx context.Context, tx pgx.Tx, acct uuid.UUID, data string) error {
 	// Insert four rows into the "accounts" table.
-	log.Println("Creating new rows...")
+	log.Println("Creating new row...")
+
+	//parse data first here
+	stu := studentData{}	
+	json.Unmarshal([]byte(data), &stu)
+
 	if _, err := tx.Exec(ctx,
-		"INSERT INTO accounts (id, balance) VALUES ($1, $2), ($3, $4), ($5, $6), ($7, $8)", accts[0], 250, accts[1], 100, accts[2], 500, accts[3], 300); err != nil {
+		"INSERT INTO students (Lumenyid, LastName, FirstName, StudentNum, Buildings, CIDate, Approved, COM) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", acct, stu.LastName, stu.FirstName, stu.StudentNum, stu.Buildings, stu.CIDate, stu.Approved, stu.COM); err != nil {
 		return err
 	}
 	return nil
@@ -40,71 +56,46 @@ func getAllData(conn *pgx.Conn) error {
 	return nil
 }
 
-func transferFunds(ctx context.Context, tx pgx.Tx, from uuid.UUID, to uuid.UUID, amount int) error {
+func replaceData(ctx context.Context, tx pgx.Tx, studentID uuid.UUID, data studentData) error {
 	// Read the balance.
 	var fromBalance int
 	if err := tx.QueryRow(ctx,
-		"SELECT balance FROM accounts WHERE id = $1", from).Scan(&fromBalance); err != nil {
+		"SELECT Approved FROM students WHERE id = $1", studentID).Scan(&fromBalance); err != nil {
 		return err
-	}
-
-	if fromBalance < amount {
-		log.Println("insufficient funds")
 	}
 
 	// Perform the transfer.
-	log.Printf("Transferring funds from account with ID %s to account with ID %s...", from, to)
+	log.Printf("Updating Data from student with ID %s ...", studentID)
 	if _, err := tx.Exec(ctx,
-		"UPDATE accounts SET balance = balance - $1 WHERE id = $2", amount, from); err != nil {
-		return err
-	}
-	if _, err := tx.Exec(ctx,
-		"UPDATE accounts SET balance = balance + $1 WHERE id = $2", amount, to); err != nil {
+		"UPDATE students SET Approved = $1 WHERE Lumenyid = $2", true, studentID); err != nil {
 		return err
 	}
 	return nil
 }
 
-func deleteRows(ctx context.Context, tx pgx.Tx, one uuid.UUID, two uuid.UUID) error {
+func deleteRow(ctx context.Context, tx pgx.Tx, Lumenyid uuid.UUID) error {
 	// Delete two rows into the "accounts" table.
-	log.Printf("Deleting rows with IDs %s and %s...", one, two)
+	log.Printf("Deleting row with ID %s", Lumenyid)
 	if _, err := tx.Exec(ctx,
-		"DELETE FROM accounts WHERE id IN ($1, $2)", one, two); err != nil {
+		"DELETE FROM student WHERE Lumenyid IN ($1)", Lumenyid); err != nil {
 		return err
 	}
 	return nil
 }
 
-func EncodeToString(max int) string {
-    b := make([]byte, max)
-    n, err := io.ReadAtLeast(rand.Reader, b, max)
-    if n != max {
-        panic(err)
-    }
-    for i := 0; i < len(b); i++ {
-        b[i] = table[int(b[i])%len(table)]
-    }
-    return string(b)
-}
-
-func generateLumenyID(uniID string)string{
+func generateLumenyID()uuid.UUID{
 	log.Printf("Creating Lumeny ID")
-	LumenyID := uniID + EncodeToString(10)
-	return LumenyID
+	return uuid.New()
 }
 
 func main() {
 	// Read in connection string
-	scanner := bufio.NewScanner(os.Stdin)
-	log.Println("Enter a connection string: ")
-	scanner.Scan()
-	connstring := os.ExpandEnv("postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.
-	cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.
-	crt&options=--cluster%3Dlumeny-3513")
+	log.Println("Connecting using connection string: ")
+	connstring := os.ExpandEnv("postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dlumeny-3513")
 
 	// Connect to the "bank" database
 	config, err := pgx.ParseConfig(connstring)
-	config.Database = "bank"
+	config.Database = "school"
 	if err != nil {
 		log.Fatal("error configuring the database: ", err)
 	}
@@ -114,14 +105,12 @@ func main() {
 	}
 	defer conn.Close(context.Background())
 
-	// Insert initial rows
-	var accounts [4]uuid.UUID
-	for i := 0; i < len(accounts); i++ {
-		accounts[i] = uuid.New()
-	}
+	// Insert initial row
+	account := generateLumenyID()
+	data := "test"
 
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		return insertRows(context.Background(), tx, accounts)
+		return insertRows(context.Background(), tx, account, data)
 	})
 	if err == nil {
 		log.Println("New rows created.")
@@ -130,12 +119,12 @@ func main() {
 	}
 
 	// Print out the balances
-	log.Println("Initial balances:")
+	log.Println("PRINT ALL DATA")
 	getAllData(conn)
-
+/*
 	// Run a transfer
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		return transferFunds(context.Background(), tx, accounts[2], accounts[1], 100)
+		return replaceData(context.Background(), tx, account[2], account[1], 100)
 	})
 	if err == nil {
 		log.Println("Transfer successful.")
@@ -149,7 +138,7 @@ func main() {
 
 	// Delete rows
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		return deleteRows(context.Background(), tx, accounts[0], accounts[1])
+		return deleteRows(context.Background(), tx, account[0], account[1])
 	})
 	if err == nil {
 		log.Println("Rows deleted.")
@@ -159,5 +148,5 @@ func main() {
 
 	// Print out the balances
 	log.Println("Balances after deletion:")
-	getAllData(conn)
+	getAllData(conn)*/
 }
