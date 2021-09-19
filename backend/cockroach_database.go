@@ -1,12 +1,13 @@
 package main
 
 import (
-	"bytes"
+	//"bytes"
 	"context"
 	"log"
 	"os"
+	"time"
 	"fmt"
-	"io/ioutil"
+	//"io/ioutil"
 	"encoding/json"
 	"net/http"
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
@@ -92,11 +93,27 @@ func deleteRow(ctx context.Context, tx pgx.Tx, StudentNum int) error {
 }
 
 func main() {
+	test := "hello"
+	
 	// Read in connection string
 	log.Println("Connecting using connection string: ")
 	connstring := os.ExpandEnv("postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dlumeny-3513")
 
+	log.Println("Setting up http ")
+
 	//send info (currently sending fake data for test)
+
+	http.HandleFunc("/hello", func(w http.ResponseWriter, req *http.Request){
+		fmt.Fprintf(w, test)
+	})
+	//http.HandleFunc("/hello", createNewArticle).Methods("POST")
+
+	go func (){
+		panic(http.ListenAndServe(":9000", nil))
+	} ()
+
+
+	/*
 	values := &studentData{
 		StudentNum: 400263717,
 		LastName: "Che",
@@ -105,27 +122,10 @@ func main() {
 		CIDate: "2021-09-18",
 		Approved: true,
 		COM: true}
-	
-	json_data, err := json.Marshal(values)
 
-	resp, err := http.Post("https://jsonplaceholder.typicode.com/albums", "application/json", bytes.NewBuffer(json_data))
-
-    if err != nil {
-        log.Fatal(err)
-    }
-	
-	// recieve information
-	resp, err = http.Get("http://192.168.0.6:12345/ResourceNet/upload")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer resp.Body.Close()
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        log.Fatal(err)
-    }
-	fmt.Println(string(body))
-
+	json_data, err := json.Marshal(values)*/
+	test =`{"student_num": 123142712, "last_name": "Su", "first_name": "Eddy", "buildings":"jhe", "cidate": "2020-09-18", "approved": true, "complete": true}`
+	time.Sleep(time.Second*10)
 	// Connect to the "bank" database
 	config, err := pgx.ParseConfig(connstring)
 	config.Database = "mcmaster"
@@ -139,10 +139,10 @@ func main() {
 	defer conn.Close(context.Background())
 
 	// Insert initial row
-	account := 400263717
+	account := 123142712
 	
 	//creating temporary json message 
-	data := `{"student_num": 400263717, "last_name": "Su", "first_name": "Eddy", "buildings":"jhe", "cidate": "2020-09-18", "approved": true, "complete": true}`
+	data := `{"student_num": 123142712, "last_name": "Su", "first_name": "Eddy", "buildings":"jhe", "cidate": "2020-09-18", "approved": true, "complete": true}`
 
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return insertRows(context.Background(), tx, account, data)
@@ -158,7 +158,7 @@ func main() {
 	getUsrData(conn, account)
 
 	// Run a data value change
-	data = `{"student_num": 400263717, "last_name": "Su", "first_name": "Eddy", "buildings":"ETB", "cidate": "2020-09-18", "approved": true, "complete": true}`
+	data = `{"student_num": 123142712, "last_name": "Su", "first_name": "Eddy", "buildings":"ETB", "cidate": "2020-09-18", "approved": true, "complete": true}`
 
 	log.Println("Replacing Data")
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {

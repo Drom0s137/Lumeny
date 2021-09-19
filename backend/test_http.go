@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-    resp, err := http.Get("http://webcode.me")
+    resp, err := http.Get("http://localhost:9000/hello")
 
     if err != nil {
         log.Fatal(err)
@@ -24,4 +24,5 @@ func main() {
     }
 
     fmt.Println(string(body))
+
 }
