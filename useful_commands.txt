@@ -3,3 +3,54 @@ apt upgrade
 apt install git
 apt install golang
 go mod init basic-sample && go mod tidy
+
+git checkout -b (branch name)
+
+to connect to database:
+cockroach sql --url 'postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert='$HOME'/.postgresql/root.crt&options=--cluster%3Dlumeny-3513'
+
+passphrase:
+postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dlumeny-3513
+
+setup database:
+cat dbinit.sql | cockroach sql --url "postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dlumeny-3513"
+
+username =eddy
+host =free-tier.gcp-us-central1.cockroachlabs.cloud
+port =26257
+database =lumeny-3513.defaultdb
+password =REVEAL_PASSWORD
+
+
+docker run -it --net=host -p 3000:3000 -p 5000:5000 -p 12345:12345 -p 9000:9000 -v C:\Technical\shared:/home/shared drom0s/lumeny:v1
+
+
+
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func hello(w http.ResponseWriter, req *http.Request) {
+
+    fmt.Fprintf(w, "hello\n")
+}
+
+func headers(w http.ResponseWriter, req *http.Request) {
+
+    for name, headers := range req.Header {
+        for _, h := range headers {
+            fmt.Fprintf(w, "%v: %v\n", name, h)
+        }
+    }
+}
+
+func main() {
+
+    http.HandleFunc("/hello", hello)
+    http.HandleFunc("/headers", headers)
+
+    http.ListenAndServe(":8090", nil)
+}
