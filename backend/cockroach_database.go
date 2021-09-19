@@ -1,30 +1,29 @@
 package main
 
 import (
-	//"bufio"
+	"bytes"
 	"context"
 	"log"
 	"os"
+	"fmt"
+	"io/ioutil"
 	"encoding/json"
+	"net/http"
 	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 )
 
-var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
-
 type studentData struct {
-	Lumenyid uuid.UUID
-    LastName string
-    FirstName string
-    StudentNum int
-    Buildings string
-    CIDate string
-    Approved bool
-    COM bool
+	StudentNum int	`json:"student_num"`
+    LastName string	`json:"last_name"`
+    FirstName string	`json:"first_name"`
+    Buildings string	`json:"buildings"`
+    CIDate string	`json:"cidate"`
+    Approved bool 	`json:"approved"`
+    COM bool 	`json:"complete"`
 }
 
-func insertRows(ctx context.Context, tx pgx.Tx, acct uuid.UUID, data string) error {
+func insertRows(ctx context.Context, tx pgx.Tx, acct int, data string) error {
 	// Insert four rows into the "accounts" table.
 	log.Println("Creating new row...")
 
@@ -33,59 +32,63 @@ func insertRows(ctx context.Context, tx pgx.Tx, acct uuid.UUID, data string) err
 	json.Unmarshal([]byte(data), &stu)
 
 	if _, err := tx.Exec(ctx,
-		"INSERT INTO students (LumenyID, LastName, FirstName, StudentNum, Buildings, CIDate, Approved, COM) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", acct, stu.LastName, stu.FirstName, stu.StudentNum, stu.Buildings, stu.CIDate, stu.Approved, stu.COM); err != nil {
+		"INSERT INTO students (StudentNum, LastName, FirstName, Buildings, CIDate, Approved, COM) VALUES ($1, $2, $3, $4, $5, $6, $7)", acct, stu.LastName, stu.FirstName, stu.Buildings, stu.CIDate, stu.Approved, stu.COM); err != nil {
 		return err
 	}
 	return nil
 }
 
-func getAllData(conn *pgx.Conn) error {
-	rows, err := conn.Query(context.Background(), "SELECT LumenyID FROM students")
+func getUsrData(conn *pgx.Conn, StudentNum int) error {
+	rows, err := conn.Query(context.Background(), "SELECT * FROM students WHERE StudentNum = $1", StudentNum)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var id uuid.UUID
-		//var balance int
-		if err := rows.Scan(&id); err != nil {
+		var SN int
+     	var LN string
+    	var FN string
+    	var Build string
+    	var CIDate string
+    	var Appr bool
+    	var COM bool
+		if err := rows.Scan(&SN, &LN, &FN, &Build, &CIDate, &Appr, &COM); err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("%s\n", id)
+		log.Printf("%d, %s, %s, %s, %s, %s, %s\n", SN, LN, FN, Build, CIDate, Appr, COM)
 	}
+
 	return nil
 }
 
-func replaceData(ctx context.Context, tx pgx.Tx, studentID uuid.UUID, data studentData) error {
+func replaceData(ctx context.Context, tx pgx.Tx, studentNum int, data string) error {
 	// Read the balance.
-	var fromBalance int
-	if err := tx.QueryRow(ctx,
-		"SELECT Approved FROM students WHERE id = $1", studentID).Scan(&fromBalance); err != nil {
-		return err
-	}
+	stu := studentData{}	
+	json.Unmarshal([]byte(data), &stu)
 
 	// Perform the transfer.
-	log.Printf("Updating Data from student with ID %s ...", studentID)
-	if _, err := tx.Exec(ctx,
-		"UPDATE students SET Approved = $1 WHERE LumenyID = $2", true, studentID); err != nil {
+	log.Printf("Updating Data from student with ID %s ...", studentNum)
+	_, err := tx.Exec(ctx, "UPDATE students SET FirstName = $1 WHERE StudentNum = $2", stu.FirstName, studentNum)
+	_, err = tx.Exec(ctx, "UPDATE students SET LastName = $1 WHERE StudentNum = $2", stu.LastName, studentNum)
+	_, err = tx.Exec(ctx, "UPDATE students SET Buildings = $1 WHERE StudentNum = $2", stu.Buildings, studentNum)
+	_, err = tx.Exec(ctx, "UPDATE students SET CIDate = $1 WHERE StudentNum = $2", stu.CIDate, studentNum)
+	_, err = tx.Exec(ctx, "UPDATE students SET Approved = $1 WHERE StudentNum = $2", stu.Approved, studentNum)
+	_, err = tx.Exec(ctx, "UPDATE students SET COM = $1 WHERE StudentNum = $2", stu.COM, studentNum)
+
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func deleteRow(ctx context.Context, tx pgx.Tx, Lumenyid uuid.UUID) error {
+func deleteRow(ctx context.Context, tx pgx.Tx, StudentNum int) error {
 	// Delete two rows into the "accounts" table.
-	log.Printf("Deleting row with ID %s", Lumenyid)
+	log.Printf("Deleting row with ID %d", StudentNum)
 	if _, err := tx.Exec(ctx,
-		"DELETE FROM student WHERE LumenyID IN ($1)", Lumenyid); err != nil {
+		"DELETE FROM student WHERE StudentNum IN ($1)", StudentNum); err != nil {
 		return err
 	}
 	return nil
-}
-
-func generateLumenyID()uuid.UUID{
-	log.Printf("Creating Lumeny ID")
-	return uuid.New()
 }
 
 func main() {
@@ -93,9 +96,39 @@ func main() {
 	log.Println("Connecting using connection string: ")
 	connstring := os.ExpandEnv("postgresql://eddy:hYhAfRNkqgWauPMI@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dlumeny-3513")
 
+	//send info (currently sending fake data for test)
+	values := &studentData{
+		StudentNum: 400263717,
+		LastName: "Che",
+		FirstName: "Su",
+		Buildings: "etb",
+		CIDate: "2021-09-18",
+		Approved: true,
+		COM: true}
+	
+	json_data, err := json.Marshal(values)
+
+	resp, err := http.Post("https://jsonplaceholder.typicode.com/albums", "application/json", bytes.NewBuffer(json_data))
+
+    if err != nil {
+        log.Fatal(err)
+    }
+	
+	// recieve information
+	resp, err = http.Get("http://192.168.0.6:12345/ResourceNet/upload")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer resp.Body.Close()
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        log.Fatal(err)
+    }
+	fmt.Println(string(body))
+
 	// Connect to the "bank" database
 	config, err := pgx.ParseConfig(connstring)
-	config.Database = "uni"
+	config.Database = "mcmaster"
 	if err != nil {
 		log.Fatal("error configuring the database: ", err)
 	}
@@ -106,8 +139,10 @@ func main() {
 	defer conn.Close(context.Background())
 
 	// Insert initial row
-	account := generateLumenyID()
-	data := "test"
+	account := 400263717
+	
+	//creating temporary json message 
+	data := `{"student_num": 400263717, "last_name": "Su", "first_name": "Eddy", "buildings":"jhe", "cidate": "2020-09-18", "approved": true, "complete": true}`
 
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return insertRows(context.Background(), tx, account, data)
@@ -120,22 +155,25 @@ func main() {
 
 	// Print out the balances
 	log.Println("PRINT ALL DATA")
-	getAllData(conn)
-/*
-	// Run a transfer
+	getUsrData(conn, account)
+
+	// Run a data value change
+	data = `{"student_num": 400263717, "last_name": "Su", "first_name": "Eddy", "buildings":"ETB", "cidate": "2020-09-18", "approved": true, "complete": true}`
+
+	log.Println("Replacing Data")
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		return replaceData(context.Background(), tx, account[2], account[1], 100)
+		return replaceData(context.Background(), tx, account, data) 
 	})
 	if err == nil {
-		log.Println("Transfer successful.")
+		log.Println("Replacement successful.")
 	} else {
 		log.Fatal("error: ", err)
 	}
 
 	// Print out the balances
-	log.Println("Balances after transfer:")
-	getAllData(conn)
-
+	log.Println("Info after replacement")
+	getUsrData(conn, account)
+/*
 	// Delete rows
 	err = crdbpgx.ExecuteTx(context.Background(), conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return deleteRows(context.Background(), tx, account[0], account[1])
