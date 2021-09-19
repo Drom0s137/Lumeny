@@ -12,3 +12,4 @@ const double kDefaultPadding = 20.0;
 const double buttonTextSize = 18;
 const double textTitles = 20;
 const double BigTitle = 42;
+const double dailyCheckIn = 16;

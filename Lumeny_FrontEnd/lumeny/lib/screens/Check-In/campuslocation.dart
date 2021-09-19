@@ -4,7 +4,9 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:quiz_app/constants.dart';
+import 'package:quiz_app/screens/Check-In/selectingcampuslocation.dart';
 import 'package:quiz_app/screens/Check-In/dailycheckin.dart';
+
 import 'package:get/get.dart';
 
 class CampusLocation extends StatefulWidget {
@@ -32,12 +34,15 @@ class _CampusLocation extends State<CampusLocation> {
           ),
           Align(
             alignment: Alignment(0, -0.9),
-            child: Text(
-              "𝐏𝐥𝐞𝐚𝐬𝐞 𝐒𝐞𝐥𝐞𝐜𝐭 𝐓𝐡𝐞 𝐂𝐚𝐦𝐩𝐮𝐬 𝐋𝐨𝐜𝐚𝐭𝐢𝐨𝐧",
-              style: TextStyle(
-                  color: kPrimaryColor,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w600),
+            child: InkWell(
+              onTap: () => Get.to(Location()),
+              child: Text(
+                "𝐏𝐥𝐞𝐚𝐬𝐞 𝐒𝐞𝐥𝐞𝐜𝐭 𝐓𝐡𝐞 𝐂𝐚𝐦𝐩𝐮𝐬 𝐋𝐨𝐜𝐚𝐭𝐢𝐨𝐧",
+                style: TextStyle(
+                    color: kPrimaryColor,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w600),
+              ),
             ),
           ),
           Align(

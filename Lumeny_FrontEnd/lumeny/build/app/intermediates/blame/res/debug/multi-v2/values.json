@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "C:\\Users\\Ayman PC\\Desktop\\BinaryLingo-master\\build\\app\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values\\values.xml",
+            "outputFile": "C:\\Users\\Ayman PC\\Desktop\\Lumeny\\Lumeny_FrontEnd\\lumeny\\build\\app\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values\\values.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Ayman PC\\Desktop\\BinaryLingo-master\\android\\app\\src\\main\\res\\values\\styles.xml",
+                    "source": "C:\\Users\\Ayman PC\\Desktop\\Lumeny\\Lumeny_FrontEnd\\lumeny\\android\\app\\src\\main\\res\\values\\styles.xml",
                     "from": {
                         "startLines": "3,14",
                         "startColumns": "4,4",

@@ -22,18 +22,17 @@ class PFPCreation extends StatelessWidget {
             decoration: new BoxDecoration(color: kTextField),
           ),
           Align(
-            alignment: Alignment(0, -1.05),
+            alignment: Alignment(0, -0.85),
             child: InkWell(
-              onTap: () => Get.to(LandingPage()),
+              // onTap: ,
               child: Container(
-                padding: EdgeInsets.all(kDefaultPadding), // 15
+                padding: EdgeInsets.only(left: 80),
+                height: 150,
+                width: 150,
                 decoration: BoxDecoration(
-                    // color: kPrimaryColor,
-                    // borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                child: Icon(
-                  Icons.account_circle,
-                  size: 200,
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                      image: AssetImage('assets/Eddy.jpg'), fit: BoxFit.fill),
                 ),
               ),
             ),

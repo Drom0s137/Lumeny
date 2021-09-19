@@ -33,11 +33,11 @@ class WelcomeScreen extends StatelessWidget {
                   Spacer(flex: 1),
                   Center(
                     child: Text(
-                      "𝐌𝐚𝐜𝐂𝐡𝐞𝐜𝐤 𝐌𝐚𝐝𝐞 𝐄𝐚𝐬𝐲 𝐟𝐨𝐫 𝐄𝐯𝐞𝐫𝐲𝐨𝐧𝐞",
+                      "𝐂𝐡𝐞𝐜𝐤 𝐢𝐧 𝐌𝐚𝐝𝐞 𝐋𝐢𝐠𝐡𝐭",
                       style: TextStyle(
                           color: kPrimaryColor,
                           fontWeight: FontWeight.bold,
-                          fontSize: 20),
+                          fontSize: 24),
                     ),
                   ),
                   Spacer(flex: 1),
